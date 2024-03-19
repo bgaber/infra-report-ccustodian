@@ -1,0 +1,497 @@
+vars:
+  metrics-filters: &metrics-filter
+        type: metrics
+        name: DatabaseConnections
+        days: 60
+        value: 0
+        op: equal
+
+policies:
+  - name: missingapptagec2
+    resource: ec2
+    filters:
+      - "tag:Application": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} EC2 Servers Missing Application Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingapptagelb
+    resource: elb
+    filters:
+      - "tag:Application": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} ELBs Missing Application Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingapptagalbnlb
+    resource: app-elb
+    filters:
+      - "tag:Application": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} ALBs and/or NLBs Missing Application Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingapptagebs
+    resource: ebs
+    filters:
+      - "tag:Application": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} EBS Volumes Missing Application Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingownertagec2
+    resource: ec2
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} EC2 Servers Missing Owner Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingownertagelb
+    resource: elb
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} ELBs Missing Owner Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingownertagalbnlb
+    resource: app-elb
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} ALBs and/or NLBs Missing Owner Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingownertagebs
+    resource: ebs
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} EBS Volumes Missing Owner Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: unattachedvols
+    resource: ebs
+    filters:
+      - State: available
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These EBS Volumes are not attached to any Instance:"
+        action_desc: |
+            "Actions Taken: Recommend Delete.
+            The listed EBS Volumes are unused and, therefore, should be deleted."
+        subject: "{{ account }} EBS Volumes Unattached"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: unencryptedebs
+    resource: ebs
+    filters:
+      - Encrypted: false
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These EBS Volumes are not encrypted:"
+        action_desc: |
+            "Actions Taken: Recommend Encrypt.
+            The listed EBS Volumes are unencrypted and, therefore, should be encrypted."
+        subject: "{{ account }} EBS Volumes Unencrypted"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: badelbssl
+    resource: elb
+    filters:
+      - type: ssl-policy
+        blacklist:
+          - Protocol-TLSv1
+          - Protocol-TLSv1.1
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} Load Balancers with TLS 1.0 or TLS 1.1"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: unusedelb
+    resource: elb
+    filters:
+      - Instances: []
+    actions:
+      #- delete
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These ELBs are not used by any Instance:"
+        action_desc: |
+            "Actions Taken: Recommend Delete.
+            The listed ELBs are unused and, therefore, should be deleted."
+        subject: "{{ account }} Unused ELB"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: unusedeip
+    resource: network-addr
+    filters:
+      - type: value
+        key: AssociationId
+        value: absent
+    actions:
+      - type: release
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} Unused Elastic IPs"
+        violation_desc: "These Elastic IPs are not used by any Instance:"
+        action_desc: |
+            "Actions Taken: Released.
+            The listed Elastic IPs were unused and, therefore, were released."
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingapplicationtagrds
+    resource: rds
+    filters:
+      - "tag:Application": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} RDS Missing Application Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: missingownertagrds
+    resource: rds
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} RDS Missing Owner Tag"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: security-groups-unused
+    resource: security-group
+    description: |
+      Retrieve unused security groups using regex.
+    filters:
+      - unused 
+      - type: value
+        key: GroupName
+        op: regex
+        value: .* 
+    actions:
+      #- delete
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: '{{ account }} Unused Security Groups'
+        violation_desc: "These Security Groups are not used by any AWS resource:"
+        action_desc: |
+            "Actions Taken:  None.
+            The listed Security Groups are unused and, therefore, should be deleted."
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: security-groups-with-ssh-rule-open-to-internet
+    resource: security-group
+    description: |
+      Retrieve security groups with ssh rules open to Internet.
+    filters:
+      - or:
+        - type: ingress
+          IpProtocol: tcp
+          Ports: [22]
+          Cidr: "0.0.0.0/0"
+        - type: ingress
+          IpProtocol: tcp
+          Ports: [22]
+          CidrV6: "::/0"
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: '{{ account }} Security Groups with SSH rules open to Internet'
+        violation_desc: "These Security Groups have ssh rules open to Internet:"
+        action_desc: |
+            "Actions Taken:  None.
+            The listed Security Groups have ssh rules open to Internet."
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: security-groups-with-rdp-rule-open-to-internet
+    resource: security-group
+    description: |
+      Retrieve security groups with rdp rules open to Internet.
+    filters:
+      - or:
+        - type: ingress
+          IpProtocol: tcp
+          Ports: [3389]
+          Cidr: "0.0.0.0/0"
+        - type: ingress
+          IpProtocol: tcp
+          Ports: [3389]
+          CidrV6: "::/0"
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: '{{ account }} Security Groups with RDP rules open to Internet'
+        violation_desc: "These Security Groups have RDP rules open to Internet:"
+        action_desc: |
+            "Actions Taken:  None.
+            The listed Security Groups have RDP rules open to Internet."
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: rds-unused-databases-notify-step1
+    resource: rds
+    description: |
+      Take the average number of connections over 180 days for databases that are greater than 180
+      days old.
+    filters:
+      - type: value
+        value_type: age
+        key: InstanceCreateTime
+        value: 180
+        op: greater-than
+      - <<: *metrics-filter
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: 1
+        subject: "{{ account }} Unused RDS Databases"
+        violation_desc: "These RDS Instances have had no connections in the last 6 months and are unused:"
+        action_desc: |
+            "Actions Taken:  None.
+            At this point we are just notifying you of the unused RDS databases."
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: expiring-acm-certs
+    resource: acm-certificate
+    description: |
+      returns certs which are soon to expire
+    filters:
+      - and:
+        - type: value
+          key: NotAfter
+          op: less-than
+          value_type: expiration
+          value: 30
+        - type: value
+          key: Status
+          op: equal
+          value: ISSUED
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        subject: "{{ account }} ACM Certificates Expiring In 30 Days"
+        action_desc: |
+          "Actions Taken:  Notification Only"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: delete-decommissioned-ebs-snapshots
+    resource: ebs-snapshot
+    comment: |
+      Report on total count of decommissioned EBS snapshots
+    filters:
+      - type: age
+        days: 90
+        op: ge
+    actions:
+      - delete
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These EBS Snapshots have been deleted:"
+        action_desc: |
+            "Actions Taken: The listed EBS Snapshots were created for a past EC2 decommission and were deleted because they are now older than 90 days"
+        subject: "{{ account }} EBS Snapshots from a past EC2 decommission deleted because they were older than 90 days"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: delete-decommissioned-rds-snapshots
+    resource: rds-snapshot
+    comment: |
+      Report on total count of decommissioned RDS snapshots
+    filters:
+      - type: age
+        days: 90
+        op: ge
+    actions:
+      - delete
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These RDS Snapshots have been deleted:"
+        action_desc: |
+            "Actions Taken: The listed RDS Snapshots were created for a past RDS decommission and were deleted because they are now older than 90 days"
+        subject: "{{ account }} RDS Snapshots from a past RDS decommission deleted because they were older than 90 days"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1
+  - name: identify-unused-ec2-instances
+    resource: ec2
+    comment: |
+      Report of unused EC2 instances
+    filters:
+      - type: value
+        key: LaunchTime
+        op: greater-than
+        value: 30
+        value_type: age
+      - name: CPUUtilization
+        type: metrics
+        days: 14
+        missing-value: 0
+        op: le
+        statistics: Maximum
+        value: 5
+    actions:
+      - type: notify
+        template: default.html
+        template_format: html
+        priority_header: '1'
+        violation_desc: "These EC2 Instances are unused:"
+        action_desc: |
+            "Actions Taken:  None.
+             At this point we are just notifying you of the unused EC2 instances."
+        subject: "{{ account }} Unused EC2 Instances"
+        to:
+          - dl-cc-cts-cloudops@compucom.com
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/472510080448/cloud-custodian
+          region: us-east-1

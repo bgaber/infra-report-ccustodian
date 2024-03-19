@@ -1,0 +1,24 @@
+kind: pipeline
+type: docker
+name: Cloud Custodian Audit
+
+steps:
+- name: Cloud Custodian Version
+  image: cloudcustodian/c7n:latest
+  commands:
+  - custodian version
+- name: Validate policies.yml
+  image: cloudcustodian/c7n:latest
+  commands:
+  - custodian validate policies.yml
+- name: Dry Run
+  image: cloudcustodian/c7n-org:0.9.23.0
+  commands:
+  - c7n-org run -c accounts.yml -s /tmp -u policies.yml --dryrun
+- name: Run Policies
+  image: cloudcustodian/c7n-org:0.9.23.0
+  commands:
+  - c7n-org run -c accounts.yml -s /tmp -u policies.yml
+  when:
+    branch:
+    - main
